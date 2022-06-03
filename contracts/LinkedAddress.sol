@@ -51,15 +51,13 @@ library LinkedAddress {
 
         // Verify that the reverse lookup for mainAddress matches the mainENSParts
         {
-            bytes memory ensCheckBuffer;
-            uint256 i = mainENSParts.length;
-            for (; i > 1; ) {
-                ensCheckBuffer = abi.encodePacked(".", mainENSParts[i - 1], ensCheckBuffer);
-                unchecked {
-                    i--;
+            uint256 len = mainENSParts.length;
+            bytes memory ensCheckBuffer = bytes(mainENSParts[0]);
+            unchecked {
+                for (uint256 idx = 1; idx < len; ++idx) {
+                    ensCheckBuffer = abi.encodePacked(ensCheckBuffer, ".", mainENSParts[idx]);
                 }
             }
-            ensCheckBuffer = abi.encodePacked(mainENSParts[i - 1], ensCheckBuffer);
             require(
                 keccak256(abi.encodePacked(Resolver(mainReverseResolver).name(mainReverseHash))) ==
                     keccak256(ensCheckBuffer),
@@ -109,32 +107,28 @@ library LinkedAddress {
         namehash = keccak256(abi.encodePacked(parentNamehash, keccak256(bytes(name))));
     }
 
-    function _computeReverseNamehash(address _address) private view returns (bytes32 namehash) {
-        namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
-        namehash = keccak256(abi.encodePacked(namehash, keccak256(abi.encodePacked("reverse"))));
-        namehash = keccak256(abi.encodePacked(namehash, keccak256(abi.encodePacked("addr"))));
-        namehash = keccak256(
-            abi.encodePacked(namehash, keccak256(_addressToStringLowercase(_address)))
-        );
+    // _computeNamehash('addr.reverse')
+    bytes32 constant ADDR_REVERSE_NODE =
+        0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
+
+    function _computeReverseNamehash(address _address) private pure returns (bytes32 namehash) {
+        namehash = keccak256(abi.encodePacked(ADDR_REVERSE_NODE, sha3HexAddress(_address)));
     }
 
-    function _addressToStringLowercase(address _address)
-        private
-        pure
-        returns (bytes memory addressString)
-    {
-        addressString = new bytes(40);
-        for (uint256 i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint256(uint160(_address)) / (2**(8 * (19 - i)))));
-            bytes1 hi = bytes1(uint8(b) / 16);
-            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            addressString[2 * i] = _bytes1ToChar(hi);
-            addressString[2 * i + 1] = _bytes1ToChar(lo);
+    function sha3HexAddress(address addr) private pure returns (bytes32 ret) {
+        assembly {
+            let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
+            let i := 40
+            for {
+
+            } gt(i, 0) {
+
+            } {
+                i := sub(i, 1)
+                mstore8(i, byte(and(addr, 0xf), lookup))
+                addr := div(addr, 0x10)
+            }
+            ret := keccak256(0, 40)
         }
-    }
-
-    function _bytes1ToChar(bytes1 b) private pure returns (bytes1 c) {
-        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
-        else return bytes1(uint8(b) + 0x57);
     }
 }
