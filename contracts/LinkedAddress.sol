@@ -24,6 +24,8 @@ interface Resolver {
  * Validate a signing address is associtaed with a linked address
  */
 abstract contract LinkedAddress {
+    bytes32 private constant AUTH_PREFIX_KECCAK256 = keccak256(abi.encodePacked("auth"));
+
     /**
      * Validate that the message sender is an authentication address for the mainAddress
      *
@@ -39,21 +41,18 @@ abstract contract LinkedAddress {
         address mainAddress,
         string[] memory mainENSParts
     ) internal view returns (bool) {
-        {
-            bytes32 mainNameHash = _computeNamehash(mainENSParts);
-            address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
-            require(mainResolver != address(0), "Invalid");
-            require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Invalid");
+        bytes32 mainNameHash = _computeNamehash(mainENSParts);
+        address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
+        require(mainResolver != address(0), "Invalid");
+        require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Invalid");
 
-            bytes32 senderReverseNameHash = _computeReverseNamehash();
-            address senderResolver = ENS(ensRegistry).resolver(senderReverseNameHash);
-            require(senderResolver != address(0), "Invalid");
-            string memory senderENSLookup = Resolver(senderResolver).name(senderReverseNameHash);
-            require(keccak256(senderENS) == keccak256(bytes(senderENSLookup)), "Invalid");
-        }
+        bytes32 senderReverseNameHash = _computeReverseNamehash();
+        address senderResolver = ENS(ensRegistry).resolver(senderReverseNameHash);
+        require(senderResolver != address(0), "Invalid");
+        string memory senderENSLookup = Resolver(senderResolver).name(senderReverseNameHash);
+        require(keccak256(senderENS) == keccak256(bytes(senderENSLookup)), "Invalid");
 
-        // Quick substring comparison
-        // Get the total theoretical length of mainENS
+        // Check main domain matches, and the format is auth[0-9]*.<main domain>
         bytes memory ensCheckBuffer;
         {
             for (uint256 i = mainENSParts.length; i > 0; ) {
@@ -72,7 +71,7 @@ abstract contract LinkedAddress {
                 "Invalid"
             );
             // Check prefix matches auth[0-9]*.
-            require(keccak256(abi.encodePacked("auth")) == keccak256(senderENS[:4]), "Invalid");
+            require(AUTH_PREFIX_KECCAK256 == keccak256(senderENS[:4]), "Invalid");
             for (uint256 i = senderENS.length - ensCheckBuffer.length; i > 4; ) {
                 require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
                 unchecked {
@@ -81,22 +80,16 @@ abstract contract LinkedAddress {
             }
         }
 
-        // Check if auth subdomain
+        // Check auth subdomain forward record
         {
-            string[] memory authENSParts = new string[](mainENSParts.length + 1);
             uint256 subdomainLength = senderENS.length - ensCheckBuffer.length;
-            authENSParts[0] = string(senderENS[:subdomainLength]);
-            unchecked {
-                for (uint256 idx = 0; idx < mainENSParts.length; ++idx) {
-                    authENSParts[idx + 1] = mainENSParts[idx];
-                }
-            }
-            bytes32 authNameHash = _computeNamehash(authENSParts);
+            bytes32 authNameHash = keccak256(
+                abi.encodePacked(mainNameHash, keccak256(senderENS[:subdomainLength]))
+            );
             address authResolver = ENS(ensRegistry).resolver(authNameHash);
             require(authResolver != address(0), "Invalid");
             require(msg.sender == Resolver(authResolver).addr(authNameHash), "Invalid");
         }
-
         return true;
     }
 
