@@ -19,20 +19,31 @@ contract("LinkedAddress", function ([...accounts]) {
       mockResolver = await MockResolver.new();
     });
 
-    it("test functionality", async function () {
+    async function setupForwardRecords(registry, resolver, address, ENS) {
+      const node = namehash.hash(ENS);
+      await registry.setResolver(node, resolver.address);
+      await resolver.setAddr(node, address);
+    }
+
+    async function setupReverseRecord(registry, resolver, address, ENS) {
+      const reverseNode = namehash.hash(
+        `${address.toString().substring(2).toLowerCase()}.addr.reverse`
+      );
+      await registry.setResolver(reverseNode, resolver.address);
+      await resolver.setName(reverseNode, ENS);
+    }
+
+    async function setupENS(registry, resolver, address, ENS) {
+      await setupForwardRecords(registry, resolver, address, ENS);
+      await setupReverseRecord(registry, resolver, address, ENS);
+    }
+
+    it("test standard functionality", async function () {
       const mainENS = "wilkins.eth";
       const authENS = "auth.wilkins.eth";
 
-      const mainENSNode = namehash.hash(mainENS);
-      const authENSReverseNode = namehash.hash(
-        `${authAddress.toString().substring(2).toLowerCase()}.addr.reverse`
-      );
-
-      await mockRegistry.setResolver(mainENSNode, mockResolver.address);
-      await mockResolver.setAddr(mainENSNode, mainAddress);
-
-      await mockRegistry.setResolver(authENSReverseNode, mockResolver.address);
-      await mockResolver.setName(authENSReverseNode, authENS);
+      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
 
       await mockContract.testValidate(
         mockRegistry.address,
@@ -49,6 +60,25 @@ contract("LinkedAddress", function ([...accounts]) {
           mainAddress,
           mainENS.split("."),
           { from: anotherAddress }
+        ),
+        "Invalid"
+      );
+    });
+
+    it("test auth.main not set", async function () {
+      const mainENS = "wilkins.eth";
+      const authENS = "auth.wilkins.eth";
+
+      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupReverseRecord(mockRegistry, mockResolver, authAddress, authENS);
+
+      await truffleAssert.reverts(
+        mockContract.testValidate(
+          mockRegistry.address,
+          web3.utils.encodePacked({ value: authENS, type: "string" }),
+          mainAddress,
+          mainENS.split("."),
+          { from: authAddress }
         ),
         "Invalid"
       );
