@@ -47,21 +47,21 @@ contract("LinkedAddress", function ([...accounts]) {
 
       await mockContract.testValidate(
         mockRegistry.address,
-        web3.utils.encodePacked({ value: authENS, type: "string" }),
+        authAddress,
+        web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
         mainAddress,
-        mainENS.split("."),
-        { from: authAddress }
+        mainENS.split(".")
       );
 
       await truffleAssert.reverts(
         mockContract.testValidate(
           mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS, type: "string" }),
+          anotherAddress,
+          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
           mainAddress,
-          mainENS.split("."),
-          { from: anotherAddress }
+          mainENS.split(".")
         ),
-        "Invalid"
+        "Not authenticated"
       );
     });
 
@@ -75,12 +75,31 @@ contract("LinkedAddress", function ([...accounts]) {
       await truffleAssert.reverts(
         mockContract.testValidate(
           mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS, type: "string" }),
+          authAddress,
+          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
           mainAddress,
-          mainENS.split("."),
-          { from: authAddress }
+          mainENS.split(".")
         ),
-        "Invalid"
+        "Auth ENS not registed"
+      );
+    });
+
+    it("test wrong prefix", async function () {
+      const mainENS = "wilkins.eth";
+      const authENS = "foobar.wilkins.eth";
+
+      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
+
+      await truffleAssert.reverts(
+        mockContract.testValidate(
+          mockRegistry.address,
+          authAddress,
+          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
+          mainAddress,
+          mainENS.split(".")
+        ),
+        "Invalid prefix"
       );
     });
   });

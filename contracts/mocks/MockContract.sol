@@ -4,13 +4,21 @@ pragma solidity ^0.8.0;
 
 import "../LinkedAddress.sol";
 
-contract MockContract is LinkedAddress {
+contract MockContract {
     function testValidate(
         address ensRegistry,
-        bytes calldata senderENS,
+        address authAddress,
+        bytes calldata authENSLabel,
         address mainAddress,
         string[] calldata mainENSParts
     ) external returns (bool) {
-        return validate(ensRegistry, senderENS, mainAddress, mainENSParts);
+        return
+            LinkedAddress.validate(
+                ensRegistry,
+                authAddress,
+                authENSLabel,
+                mainAddress,
+                mainENSParts
+            );
     }
 }
