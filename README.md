@@ -2,7 +2,7 @@
 
 Smart contract validation for ENS Subdomain Authentication (EIP-5131)
 
-(Test run suggests (35,780 - 21,217) = 14,563 gas to do the check)
+(Test run suggests (80,181 - 21,217) = 58,964 gas to do the check)
 
 Discussion here:
 https://ethereum-magicians.org/t/eip-5131-ens-authentication-link/9458
