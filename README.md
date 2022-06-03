@@ -2,7 +2,7 @@
 
 Smart contract validation for ENS Auth Linking (EIP-5131)
 
-** WARNING ** Still being designed. Currently gas inefficient.
+(Test run suggests 77,369 gas to do the check)
 
 Discussion here:
 https://ethereum-magicians.org/t/eip-5131-ens-authentication-link/9458

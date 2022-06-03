@@ -28,16 +28,17 @@ abstract contract LinkedAddress {
      * Validate that the message sender is an authentication address for the mainAddress
      *
      * @param ensRegistry    Address of ENS registry
-     * @param senderENS      Sender ENS. Pass this in for cheaper checking against main address ENS
+     * @param senderENS      Sender ENS. This is passed in for gas efficient checking against main address ENS
      * @param mainAddress    The main address we are checking against
-     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth'])
+     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']). 
+     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
      */
     function validate(address ensRegistry, bytes calldata senderENS, address mainAddress, string[] memory mainENSParts) internal view returns(bool) {
-        bytes32 mainNameHash = computeNamehash(mainENSParts);
+        bytes32 mainNameHash = _computeNamehash(mainENSParts);
         address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
         require(mainResolver != address(0), "Invalid");
         require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Invalid");
-        bytes32 senderReverseNameHash = computeReverseNamehash();
+        bytes32 senderReverseNameHash = _computeReverseNamehash();
         address senderResolver = ENS(ensRegistry).resolver(senderReverseNameHash);
         require(senderResolver != address(0), "Invalid");
         string memory senderENSLookup = Resolver(senderResolver).name(senderReverseNameHash);
@@ -69,23 +70,11 @@ abstract contract LinkedAddress {
         return true;
     }
 
-    function addressToStringLowercase(address x) private pure returns (bytes memory s) {
-        s = new bytes(40);
-        for (uint i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
-            bytes1 hi = bytes1(uint8(b) / 16);
-            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            s[2*i] = char(hi);
-            s[2*i+1] = char(lo);            
-        }
-    }
+    // *********************
+    //   Helper Functions
+    // *********************
 
-    function char(bytes1 b) private pure returns (bytes1 c) {
-        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
-        else return bytes1(uint8(b) + 0x57);
-    }
-
-    function computeNamehash(string[] memory _nameParts) private pure returns (bytes32 namehash) {
+    function _computeNamehash(string[] memory _nameParts) private pure returns (bytes32 namehash) {
         namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
         for (uint i = _nameParts.length; i > 0;) {
             namehash = keccak256(
@@ -97,7 +86,7 @@ abstract contract LinkedAddress {
         }
     }
 
-    function computeReverseNamehash() private view returns (bytes32 namehash) {
+    function _computeReverseNamehash() private view returns (bytes32 namehash) {
         namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
         namehash = keccak256(
           abi.encodePacked(namehash, keccak256(abi.encodePacked('reverse')))
@@ -106,8 +95,24 @@ abstract contract LinkedAddress {
           abi.encodePacked(namehash, keccak256(abi.encodePacked('addr')))
         );
         namehash = keccak256(
-          abi.encodePacked(namehash, keccak256(addressToStringLowercase(msg.sender)))
+          abi.encodePacked(namehash, keccak256(_addressToStringLowercase(msg.sender)))
         );
+    }
+
+    function _addressToStringLowercase(address _address) private pure returns (bytes memory addressString) {
+        addressString = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint(uint160(_address)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            addressString[2*i] = _bytes1ToChar(hi);
+            addressString[2*i+1] = _bytes1ToChar(lo);            
+        }
+    }
+
+    function _bytes1ToChar(bytes1 b) private pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
     }
 
 }
