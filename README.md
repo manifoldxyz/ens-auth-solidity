@@ -1,6 +1,6 @@
 # ens-auth-solidity
 
-Smart contract validation for ENS Auth Linking (EIP-5131)
+Smart contract validation for ENS Subdomain Authentication (EIP-5131)
 
 (Test run suggests 77,369 gas to do the check)
 
