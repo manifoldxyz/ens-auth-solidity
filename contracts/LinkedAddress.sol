@@ -14,8 +14,9 @@ interface ENS {
 /**
  * ENS Resolver Interface
  */
-interface Resolver{
+interface Resolver {
     function addr(bytes32 node) external view returns (address);
+
     function name(bytes32 node) external view returns (string memory);
 }
 
@@ -23,17 +24,21 @@ interface Resolver{
  * Validate a signing address is associtaed with a linked address
  */
 abstract contract LinkedAddress {
-
     /**
      * Validate that the message sender is an authentication address for the mainAddress
      *
      * @param ensRegistry    Address of ENS registry
      * @param senderENS      Sender ENS. This is passed in for gas efficient checking against main address ENS
      * @param mainAddress    The main address we are checking against
-     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']). 
+     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
      */
-    function validate(address ensRegistry, bytes calldata senderENS, address mainAddress, string[] memory mainENSParts) internal view returns(bool) {
+    function validate(
+        address ensRegistry,
+        bytes calldata senderENS,
+        address mainAddress,
+        string[] memory mainENSParts
+    ) internal view returns (bool) {
         bytes32 mainNameHash = _computeNamehash(mainENSParts);
         address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
         require(mainResolver != address(0), "Invalid");
@@ -47,25 +52,28 @@ abstract contract LinkedAddress {
         // Quick substring comparison
         // Get the total theoretical length of mainENS
         bytes memory ensCheckBuffer;
-        for (uint i = mainENSParts.length; i > 0;) {
-            ensCheckBuffer = abi.encodePacked('.', mainENSParts[i-1], ensCheckBuffer);
+        for (uint256 i = mainENSParts.length; i > 0; ) {
+            ensCheckBuffer = abi.encodePacked(".", mainENSParts[i - 1], ensCheckBuffer);
             unchecked {
-              i--;
+                i--;
             }
         }
         bytes32 ensCheck = keccak256(ensCheckBuffer);
-        
+
         // Length of senderENS must be >= ensCheckBuffer.length+4 (since it needs to be of format auth[0-9]*.mainENS)
-        require(senderENS.length >= ensCheckBuffer.length+4, "Invalid");
+        require(senderENS.length >= ensCheckBuffer.length + 4, "Invalid");
         // Check ending substring of the senderENS matches
-        require(ensCheck == keccak256(senderENS[senderENS.length-ensCheckBuffer.length:]), "Invalid");
+        require(
+            ensCheck == keccak256(senderENS[senderENS.length - ensCheckBuffer.length:]),
+            "Invalid"
+        );
         // Check prefix matches auth[0-9]*.
-        require(keccak256(abi.encodePacked('auth')) == keccak256(senderENS[:4]), "Invalid");
-        for (uint i = senderENS.length-ensCheckBuffer.length; i > 4;) {
-          require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
-          unchecked {
-            i--;
-          }
+        require(keccak256(abi.encodePacked("auth")) == keccak256(senderENS[:4]), "Invalid");
+        for (uint256 i = senderENS.length - ensCheckBuffer.length; i > 4; ) {
+            require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
+            unchecked {
+                i--;
+            }
         }
         return true;
     }
@@ -76,37 +84,37 @@ abstract contract LinkedAddress {
 
     function _computeNamehash(string[] memory _nameParts) private pure returns (bytes32 namehash) {
         namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
-        for (uint i = _nameParts.length; i > 0;) {
+        for (uint256 i = _nameParts.length; i > 0; ) {
             namehash = keccak256(
-              abi.encodePacked(namehash, keccak256(abi.encodePacked(_nameParts[i-1])))
+                abi.encodePacked(namehash, keccak256(abi.encodePacked(_nameParts[i - 1])))
             );
             unchecked {
-              i--;
+                i--;
             }
         }
     }
 
     function _computeReverseNamehash() private view returns (bytes32 namehash) {
         namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        namehash = keccak256(abi.encodePacked(namehash, keccak256(abi.encodePacked("reverse"))));
+        namehash = keccak256(abi.encodePacked(namehash, keccak256(abi.encodePacked("addr"))));
         namehash = keccak256(
-          abi.encodePacked(namehash, keccak256(abi.encodePacked('reverse')))
-        );
-        namehash = keccak256(
-          abi.encodePacked(namehash, keccak256(abi.encodePacked('addr')))
-        );
-        namehash = keccak256(
-          abi.encodePacked(namehash, keccak256(_addressToStringLowercase(msg.sender)))
+            abi.encodePacked(namehash, keccak256(_addressToStringLowercase(msg.sender)))
         );
     }
 
-    function _addressToStringLowercase(address _address) private pure returns (bytes memory addressString) {
+    function _addressToStringLowercase(address _address)
+        private
+        pure
+        returns (bytes memory addressString)
+    {
         addressString = new bytes(40);
-        for (uint i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint(uint160(_address)) / (2**(8*(19 - i)))));
+        for (uint256 i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint256(uint160(_address)) / (2**(8 * (19 - i)))));
             bytes1 hi = bytes1(uint8(b) / 16);
             bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            addressString[2*i] = _bytes1ToChar(hi);
-            addressString[2*i+1] = _bytes1ToChar(lo);            
+            addressString[2 * i] = _bytes1ToChar(hi);
+            addressString[2 * i + 1] = _bytes1ToChar(lo);
         }
     }
 
@@ -114,5 +122,4 @@ abstract contract LinkedAddress {
         if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
         else return bytes1(uint8(b) + 0x57);
     }
-
 }
