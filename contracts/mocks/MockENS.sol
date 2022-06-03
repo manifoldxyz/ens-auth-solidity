@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  * Mock ENS Registry
  */
 contract MockRegistry {
-
     mapping(bytes32 => address) private _resolvers;
 
     function setResolver(bytes32 node, address resolver_) external {
@@ -21,7 +20,7 @@ contract MockRegistry {
 /**
  * Mock ENS Resolver
  */
-contract MockResolver{
+contract MockResolver {
     mapping(bytes32 => address) private _addrs;
     mapping(bytes32 => string) private _names;
 
