@@ -1,11 +1,11 @@
 # ens-auth-solidity
 
-Smart contract validation for ENS Auth Linking (EIP-603)
+Smart contract validation for ENS Auth Linking (EIP-5131)
 
 ** WARNING ** Still being designed. Currently gas inefficient.
 
 Discussion here:
-https://ethereum-magicians.org/t/eip-603-ens-authentication-link/9458
+https://ethereum-magicians.org/t/eip-5131-ens-authentication-link/9458
 
 ## Setup
 Using truffle framework
