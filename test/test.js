@@ -83,5 +83,9 @@ contract("LinkedAddress", function ([...accounts]) {
         "Invalid"
       );
     });
+
+    it("test nothing", async function () {
+      await mockContract.testNothing();
+    });
   });
 });

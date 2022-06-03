@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import "../LinkedAddress.sol";
 
 contract MockContract is LinkedAddress {
+    function testNothing() external returns (bool) {
+        return true;
+    }
+
     function testValidate(
         address ensRegistry,
         bytes calldata senderENS,
