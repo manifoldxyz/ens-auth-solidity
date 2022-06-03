@@ -102,5 +102,9 @@ contract("LinkedAddress", function ([...accounts]) {
         "Invalid prefix"
       );
     });
+
+    it("test nothing", async function () {
+      await mockContract.testNothing();
+    });
   });
 });
