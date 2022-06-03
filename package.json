@@ -1,0 +1,35 @@
+{
+  "name": "@manifoldxyz/ens-auth-solidity",
+  "version": "0.0.1",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "files": [
+    "contracts/**/*.sol",
+    "build/contracts/*.json"
+  ],
+  "scripts": {
+    "test": "npx truffle test",
+    "test:start-network": "npx ganache-cli -a 15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manifoldxyz/ens-auth-solidity.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/manifoldxyz/ens-auth-solidity/issues"
+  },
+  "homepage": "https://github.com/manifoldxyz/ens-auth-solidity#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@openzeppelin/truffle-upgrades": "^1.9.1",
+    "eth-gas-reporter": "^0.2.23",
+    "ganache-cli": "^6.12.2",
+    "truffle": "^5.4.21",
+    "truffle-assertions": "^0.9.2"
+  }
+}
