@@ -15,6 +15,13 @@ contract MockContract {
         address mainAddress,
         string[] calldata mainENSParts
     ) external returns (bool) {
-        return LinkedAddress.validate(ensRegistry, authENSLabel, mainAddress, mainENSParts);
+        return
+            LinkedAddress.validate(
+                ensRegistry,
+                msg.sender,
+                authENSLabel,
+                mainAddress,
+                mainENSParts
+            );
     }
 }

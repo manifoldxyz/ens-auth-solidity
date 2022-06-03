@@ -35,6 +35,7 @@ library LinkedAddress {
      */
     function validate(
         address ensRegistry,
+        address authAddress,
         bytes calldata authENSLabel,
         address mainAddress,
         string[] calldata mainENSParts
@@ -70,7 +71,7 @@ library LinkedAddress {
         bytes32 authNameHash = _computeNamehash(mainNameHash, string(authENSLabel));
         address authResolver = ENS(ensRegistry).resolver(authNameHash);
         require(authResolver != address(0), "Auth ENS not registed");
-        require(msg.sender == Resolver(authResolver).addr(authNameHash), "Not authenticated");
+        require(authAddress == Resolver(authResolver).addr(authNameHash), "Not authenticated");
 
         // Check that the subdomain name has the correct format auth[0-9]*.
         bytes4 authPart = bytes4(authENSLabel[:4]);
