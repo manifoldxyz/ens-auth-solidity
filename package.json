@@ -16,7 +16,7 @@
     "test:all": "npm test && npm run fmt && npm run lint",
     "prettier": "prettier --write '{**/*,*}.{js,ts,tsx,md,mdx,yml,sol}'",
     "fmt": "prettier -c '{**/*,*}.{js,ts,tsx,md,mdx,yml,sol}'",
-    "lint": "solhint -w 0 'contracts/**/*.sol'"
+    "lint": "solhint -w 0 'contracts/**/*.sol"
   },
   "repository": {
     "type": "git",

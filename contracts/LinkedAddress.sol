@@ -39,42 +39,64 @@ abstract contract LinkedAddress {
         address mainAddress,
         string[] memory mainENSParts
     ) internal view returns (bool) {
-        bytes32 mainNameHash = _computeNamehash(mainENSParts);
-        address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
-        require(mainResolver != address(0), "Invalid");
-        require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Invalid");
-        bytes32 senderReverseNameHash = _computeReverseNamehash();
-        address senderResolver = ENS(ensRegistry).resolver(senderReverseNameHash);
-        require(senderResolver != address(0), "Invalid");
-        string memory senderENSLookup = Resolver(senderResolver).name(senderReverseNameHash);
-        require(keccak256(senderENS) == keccak256(bytes(senderENSLookup)), "Invalid");
+        {
+            bytes32 mainNameHash = _computeNamehash(mainENSParts);
+            address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
+            require(mainResolver != address(0), "Invalid");
+            require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Invalid");
+
+            bytes32 senderReverseNameHash = _computeReverseNamehash();
+            address senderResolver = ENS(ensRegistry).resolver(senderReverseNameHash);
+            require(senderResolver != address(0), "Invalid");
+            string memory senderENSLookup = Resolver(senderResolver).name(senderReverseNameHash);
+            require(keccak256(senderENS) == keccak256(bytes(senderENSLookup)), "Invalid");
+        }
 
         // Quick substring comparison
         // Get the total theoretical length of mainENS
         bytes memory ensCheckBuffer;
-        for (uint256 i = mainENSParts.length; i > 0; ) {
-            ensCheckBuffer = abi.encodePacked(".", mainENSParts[i - 1], ensCheckBuffer);
-            unchecked {
-                i--;
+        {
+            for (uint256 i = mainENSParts.length; i > 0; ) {
+                ensCheckBuffer = abi.encodePacked(".", mainENSParts[i - 1], ensCheckBuffer);
+                unchecked {
+                    i--;
+                }
             }
-        }
-        bytes32 ensCheck = keccak256(ensCheckBuffer);
+            bytes32 ensCheck = keccak256(ensCheckBuffer);
 
-        // Length of senderENS must be >= ensCheckBuffer.length+4 (since it needs to be of format auth[0-9]*.mainENS)
-        require(senderENS.length >= ensCheckBuffer.length + 4, "Invalid");
-        // Check ending substring of the senderENS matches
-        require(
-            ensCheck == keccak256(senderENS[senderENS.length - ensCheckBuffer.length:]),
-            "Invalid"
-        );
-        // Check prefix matches auth[0-9]*.
-        require(keccak256(abi.encodePacked("auth")) == keccak256(senderENS[:4]), "Invalid");
-        for (uint256 i = senderENS.length - ensCheckBuffer.length; i > 4; ) {
-            require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
-            unchecked {
-                i--;
+            // Length of senderENS must be >= ensCheckBuffer.length+4 (since it needs to be of format auth[0-9]*.mainENS)
+            require(senderENS.length >= ensCheckBuffer.length + 4, "Invalid");
+            // Check ending substring of the senderENS matches
+            require(
+                ensCheck == keccak256(senderENS[senderENS.length - ensCheckBuffer.length:]),
+                "Invalid"
+            );
+            // Check prefix matches auth[0-9]*.
+            require(keccak256(abi.encodePacked("auth")) == keccak256(senderENS[:4]), "Invalid");
+            for (uint256 i = senderENS.length - ensCheckBuffer.length; i > 4; ) {
+                require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
+                unchecked {
+                    i--;
+                }
             }
         }
+
+        // Check if auth subdomain
+        {
+            string[] memory authENSParts = new string[](mainENSParts.length + 1);
+            uint256 subdomainLength = senderENS.length - ensCheckBuffer.length;
+            authENSParts[0] = string(senderENS[:subdomainLength]);
+            unchecked {
+                for (uint256 idx = 0; idx < mainENSParts.length; ++idx) {
+                    authENSParts[idx + 1] = mainENSParts[idx];
+                }
+            }
+            bytes32 authNameHash = _computeNamehash(authENSParts);
+            address authResolver = ENS(ensRegistry).resolver(authNameHash);
+            require(authResolver != address(0), "Invalid");
+            require(msg.sender == Resolver(authResolver).addr(authNameHash), "Invalid");
+        }
+
         return true;
     }
 
