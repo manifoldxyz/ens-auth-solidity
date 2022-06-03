@@ -25,9 +25,27 @@ interface Resolver {
  */
 library LinkedAddress {
     /**
-     * Validate that the message sender is an authentication address for the mainAddress
+     * Validate that the message sender is an authentication address for mainAddress
+     * @param ensRegistry    Address of ENS registry
+     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9]*`)
+     * @param mainAddress    The main address we want to authenticate for.
+     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
+     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
+     */
+    function validateSender(
+        address ensRegistry,
+        bytes calldata authENSLabel,
+        address mainAddress,
+        string[] calldata mainENSParts
+    ) internal view returns (bool) {
+        return validate(ensRegistry, msg.sender, authENSLabel, mainAddress, mainENSParts);
+    }
+
+    /**
+     * Validate that the authAddress is an authentication address for mainAddress
      *
      * @param ensRegistry    Address of ENS registry
+     * @param authAddress    The address of the authentication wallet
      * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
@@ -35,6 +53,7 @@ library LinkedAddress {
      */
     function validate(
         address ensRegistry,
+        address authAddress,
         bytes calldata authENSLabel,
         address mainAddress,
         string[] calldata mainENSParts
@@ -68,7 +87,7 @@ library LinkedAddress {
         bytes32 authNameHash = _computeNamehash(mainNameHash, string(authENSLabel));
         address authResolver = ENS(ensRegistry).resolver(authNameHash);
         require(authResolver != address(0), "Auth ENS not registed");
-        require(msg.sender == Resolver(authResolver).addr(authNameHash), "Not authenticated");
+        require(authAddress == Resolver(authResolver).addr(authNameHash), "Not authenticated");
 
         // Check that the subdomain name has the correct format auth[0-9]*.
         bytes4 authPart = bytes4(authENSLabel[:4]);
