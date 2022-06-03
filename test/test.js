@@ -103,6 +103,25 @@ contract("LinkedAddress", function ([...accounts]) {
       );
     });
 
+    it("test wrong dommain", async function () {
+      const mainENS = "random.eth";
+      const authENS = "auth.wilkins.eth";
+
+      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
+
+      await truffleAssert.reverts(
+        mockContract.testValidate(
+          mockRegistry.address,
+          authAddress,
+          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
+          mainAddress,
+          mainENS.split(".")
+        ),
+        "Auth ENS not registed"
+      );
+    });
+
     it("test nothing", async function () {
       await mockContract.testNothing();
     });
