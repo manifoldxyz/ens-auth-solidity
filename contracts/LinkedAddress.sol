@@ -74,7 +74,7 @@ abstract contract LinkedAddress {
             // Check prefix matches auth[0-9]*.
             require(keccak256(abi.encodePacked("auth")) == keccak256(senderENS[:4]), "Invalid");
             for (uint256 i = senderENS.length - ensCheckBuffer.length; i > 4; ) {
-                require(senderENS[0] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
+                require(senderENS[i] >= 0x30 && senderENS[i] <= 0x39, "Invalid");
                 unchecked {
                     i--;
                 }
