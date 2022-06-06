@@ -30,10 +30,13 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci --ignore-scripts run-with-testrpc
+        run: npm ci --ignore-scripts 
 
-      - name: Run linting
-        run: ./node_modules/.bin/run-with-testrpc 'truffle migrate && npm test'
+      - name: Start local chain
+        run: ganache-cli --accounts=1000 -l 20000000 &
+
+      - name: Run test
+        run: npm test
 
   lint:
     runs-on: ubuntu-latest
@@ -58,7 +61,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci --ignore-scripts run-with-testrpc
+        run: npm ci --ignore-scripts 
 
       - name: Run linting
         run: npm run lint
@@ -86,7 +89,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci --ignore-scripts run-with-testrpc
+        run: npm ci --ignore-scripts 
 
       - name: Check format
         run: npm run fmt
