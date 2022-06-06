@@ -97,8 +97,8 @@ library LinkedAddress {
                 bytes1 char = authENSLabel[i];
                 require(
                     (char >= 0x30 && char <= 0x39) ||
-                    (char >= 0x41 && char <= 0x5A) ||
-                    (char >= 0x61 && char <= 0x7A),
+                        (char >= 0x41 && char <= 0x5A) ||
+                        (char >= 0x61 && char <= 0x7A),
                     "Invalid char"
                 );
             }
