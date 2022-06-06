@@ -66,7 +66,7 @@ library LinkedAddress {
 
         bytes32 mainReverseHash = _computeReverseNamehash(mainAddress);
         address mainReverseResolver = ENS(ensRegistry).resolver(mainReverseHash);
-        require(mainReverseResolver != address(0), "Main ENS reverse lookup not registered");
+        require(mainReverseResolver != address(0), "Main address reverse not set");
 
         // Verify that the reverse lookup for mainAddress matches the mainENSParts
         {
@@ -97,8 +97,8 @@ library LinkedAddress {
                 bytes1 char = authENSLabel[i];
                 require(
                     (char >= 0x30 && char <= 0x39) ||
-                    (char >= 0x41 && char <= 0x5A) ||
-                    (char >= 0x61 && char <= 0x7A),
+                        (char >= 0x41 && char <= 0x5A) ||
+                        (char >= 0x61 && char <= 0x7A),
                     "Invalid char"
                 );
             }
@@ -133,7 +133,7 @@ library LinkedAddress {
     }
 
     // _computeNamehash('addr.reverse')
-    bytes32 constant ADDR_REVERSE_NODE =
+    bytes32 private constant ADDR_REVERSE_NODE =
         0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
 
     function _computeReverseNamehash(address _address) private pure returns (bytes32 namehash) {
@@ -141,9 +141,11 @@ library LinkedAddress {
     }
 
     function sha3HexAddress(address addr) private pure returns (bytes32 ret) {
+        // solhint-disable no-empty-blocks, no-inline-assembly
         assembly {
             let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
             let i := 40
+
             for {
 
             } gt(i, 0) {
@@ -155,5 +157,7 @@ library LinkedAddress {
             }
             ret := keccak256(0, 40)
         }
+
+        // solhint-enable no-empty-blocks, no-inline-assembly
     }
 }
