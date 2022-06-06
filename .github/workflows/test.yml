@@ -30,13 +30,65 @@ jobs:
 
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
-      run: npm ci --ignore-scripts
+      run: npm ci --ignore-scripts run-with-testrpc
 
-    # - name: Install Truffle
-    #   run: npm install truffle@5.4.29 -g # cannot use truffle@latest due to https://github.com/sc-forks/solidity-coverage/issues/696
+    - name: Run linting
+      run: ./node_modules/.bin/run-with-testrpc 'truffle migrate && npm test'
+
+  
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
     
-    # - name: Install Dependencies
-    #   run: npm install      
+    - name: Setup NodeJS 16
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+
+    - name: Show NodeJS version    
+      run: npm --version
+
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v2
+      with:
+        path: ./node_modules
+        key: modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm ci --ignore-scripts run-with-testrpc
+
+    - name: Run linting
+      run: npm run lint
+
+
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
     
-    - name: Run tests
-      run: npm run test:all
+    - name: Setup NodeJS 16
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+
+    - name: Show NodeJS version    
+      run: npm --version
+
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v2
+      with:
+        path: ./node_modules
+        key: modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm ci --ignore-scripts run-with-testrpc
+
+    - name: Check format
+      run: npm run fmt
