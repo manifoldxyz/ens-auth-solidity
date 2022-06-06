@@ -94,7 +94,13 @@ library LinkedAddress {
         require(authPart == "auth", "Invalid prefix");
         unchecked {
             for (uint256 i = authENSLabel.length; i > 4; i--) {
-                require(authENSLabel[i] >= 0x30 && authENSLabel[i] <= 0x39, "Invalid char");
+                bytes1 char = authENSLabel[i];
+                require(
+                    (char >= 0x30 && char <= 0x39) ||
+                    (char >= 0x41 && char <= 0x5A) ||
+                    (char >= 0x61 && char <= 0x7A),
+                    "Invalid char"
+                );
             }
         }
 
