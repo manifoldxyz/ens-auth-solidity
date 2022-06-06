@@ -27,7 +27,7 @@ library LinkedAddress {
     /**
      * Validate that the message sender is an authentication address for mainAddress
      * @param ensRegistry    Address of ENS registry
-     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9]*`)
+     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9A-Za-z]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
@@ -46,7 +46,7 @@ library LinkedAddress {
      *
      * @param ensRegistry    Address of ENS registry
      * @param authAddress    The address of the authentication wallet
-     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9]*`)
+     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9A-Za-z]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
@@ -89,7 +89,7 @@ library LinkedAddress {
         require(authResolver != address(0), "Auth ENS not registed");
         require(authAddress == Resolver(authResolver).addr(authNameHash), "Not authenticated");
 
-        // Check that the subdomain name has the correct format auth[0-9]*.
+        // Check that the subdomain name has the correct format auth[0-9A-Za-z]*.
         bytes4 authPart = bytes4(authENSLabel[:4]);
         require(authPart == "auth", "Invalid prefix");
         unchecked {
