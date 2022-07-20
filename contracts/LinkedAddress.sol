@@ -28,46 +28,42 @@ interface Resolver {
 library LinkedAddress {
     /**
      * Validate that the message sender is an authentication address for mainAddress
+     *
      * @param ensRegistry    Address of ENS registry
-     * @param mainAddress    The main address we want to authenticate for.
-     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
-     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
-     * @param authKey        The TEXT record of the authKey we are using for validation
-     * @param authENSParts   The array of the auth address ENS domain parts (e.g. auth.wilkins.eth == ['auth', 'wilkins', 'eth']).
-     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
+     * @param mainAddress     The main address we want to authenticate for.
+     * @param mainENSNodeHash The main ENS Node Hash
+     * @param authKey         The TEXT record of the authKey we are using for validation
+     * @param authENSNodeHash The auth ENS Node Hash
      */
     function validateSender(
         address ensRegistry,
         address mainAddress,
-        string[] calldata mainENSParts,
+        bytes32 mainENSNodeHash,
         string calldata authKey,
-        string[] calldata authENSParts
+        bytes32 authENSNodeHash
     ) internal view returns (bool) {
-        return validate(ensRegistry, mainAddress, mainENSParts, authKey, msg.sender, authENSParts);
+        return validate(ensRegistry, mainAddress, mainENSNodeHash, authKey, msg.sender, authENSNodeHash);
     }
 
     /**
      * Validate that the authAddress is an authentication address for mainAddress
      *
-     * @param ensRegistry    Address of ENS registry
-     * @param mainAddress    The main address we want to authenticate for.
-     * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
-     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
-     * @param authKey        The TEXT record of the authKey we are using for validation
-     * @param authAddress    The address of the authentication wallet
-     * @param authENSParts   The array of the auth address ENS domain parts (e.g. auth.wilkins.eth == ['auth', 'wilkins', 'eth']).
-     *                       This is used vs. the full ENS a a single string name hash 
+     * @param ensRegistry     Address of ENS registry
+     * @param mainAddress     The main address we want to authenticate for.
+     * @param mainENSNodeHash The main ENS Node Hash
+     * @param authAddress     The address of the authentication wallet
+     * @param authENSNodeHash The auth ENS Node Hash
      */
     function validate(
         address ensRegistry,
         address mainAddress,
-        string[] calldata mainENSParts,
+        bytes32 mainENSNodeHash,
         string calldata authKey,
         address authAddress,
-        string[] calldata authENSParts
+        bytes32 authENSNodeHash
     ) internal view returns (bool) {
-        _verifyMainENS(ensRegistry, mainAddress, mainENSParts, authKey, authAddress);
-        _verifyAuthENS(ensRegistry, mainAddress, authKey, authAddress, authENSParts);
+        _verifyMainENS(ensRegistry, mainAddress, mainENSNodeHash, authKey, authAddress);
+        _verifyAuthENS(ensRegistry, mainAddress, authKey, authAddress, authENSNodeHash);
 
         return true;
     }
@@ -78,18 +74,17 @@ library LinkedAddress {
     function _verifyMainENS(
         address ensRegistry,
         address mainAddress,
-        string[] calldata mainENSParts,
+        bytes32 mainENSNodeHash,
         string calldata authKey,
         address authAddress
     ) private view {
         // Check if the ENS nodes resolve correctly to the provided addresses
-        bytes32 mainNameHash = _computeNamehash(mainENSParts);
-        address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
+        address mainResolver = ENS(ensRegistry).resolver(mainENSNodeHash);
         require(mainResolver != address(0), "Main ENS not registered");
-        require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Main address is wrong");
+        require(mainAddress == Resolver(mainResolver).addr(mainENSNodeHash), "Main address is wrong");
 
         // Verify the authKey TEXT record is set to authAddress by mainENS
-        string memory authText = Resolver(mainResolver).text(mainNameHash, authKey);
+        string memory authText = Resolver(mainResolver).text(mainENSNodeHash, authKey);
         require(
             keccak256(bytes(authText)) == keccak256(bytes(_addressToString(authAddress))),
             "Invalid auth address"
@@ -101,16 +96,15 @@ library LinkedAddress {
         address mainAddress,
         string memory authKey,
         address authAddress,
-        string[] calldata authENSParts
+        bytes32 authENSNodeHash
     ) private view {
         // Check if the ENS nodes resolve correctly to the provided addresses
-        bytes32 authNameHash = _computeNamehash(authENSParts);
-        address authResolver = ENS(ensRegistry).resolver(authNameHash);
+        address authResolver = ENS(ensRegistry).resolver(authENSNodeHash);
         require(authResolver != address(0), "Auth ENS not registed");
-        require(authAddress == Resolver(authResolver).addr(authNameHash), "Auth address is wrong");
+        require(authAddress == Resolver(authResolver).addr(authENSNodeHash), "Auth address is wrong");
 
         // Verify the TEXT record is appropriately set by authENS
-        string memory vaultText = Resolver(authResolver).text(authNameHash, "vault");
+        string memory vaultText = Resolver(authResolver).text(authENSNodeHash, "vault");
         require(
             keccak256(abi.encodePacked("eip5131:", authKey, ":", _addressToString(mainAddress))) ==
                 keccak256(bytes(vaultText)),

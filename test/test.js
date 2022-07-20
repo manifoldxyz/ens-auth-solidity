@@ -45,7 +45,9 @@ contract("LinkedAddress", function ([...accounts]) {
 
     it("test standard functionality", async function () {
       const mainENS = "wilkins.eth";
+      const mainENSNodeHash = namehash.hash(mainENS);
       const authENS = "auth.wilkins.eth";
+      const authENSNodeHash = namehash.hash(authENS);
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
@@ -61,9 +63,9 @@ contract("LinkedAddress", function ([...accounts]) {
       await mockContract.testValidate(
         mockRegistry.address,
         mainAddress,
-        mainENS.split("."),
+        mainENSNodeHash,
         authKey,
-        authENS.split("."),
+        authENSNodeHash,
         { from: authAddress }
       );
 
@@ -71,9 +73,9 @@ contract("LinkedAddress", function ([...accounts]) {
         mockContract.testValidate(
           mockRegistry.address,
           mainAddress,
-          mainENS.split("."),
+          mainENSNodeHash,
           authKey,
-          authENS.split("."),
+          authENSNodeHash,
           { from: anotherAddress }
         ),
         "Invalid auth address"
@@ -82,7 +84,9 @@ contract("LinkedAddress", function ([...accounts]) {
 
     it("test breaking the chain via invalidating TEXT", async function () {
       const mainENS = "wilkins.eth";
+      const mainENSNodeHash = namehash.hash(mainENS);
       const authENS = "auth.wilkins.eth";
+      const authENSNodeHash = namehash.hash(authENS);
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
@@ -98,9 +102,9 @@ contract("LinkedAddress", function ([...accounts]) {
       await mockContract.testValidate(
         mockRegistry.address,
         mainAddress,
-        mainENS.split("."),
+        mainENSNodeHash,
         authKey,
-        authENS.split("."),
+        authENSNodeHash,
         { from: authAddress }
       );
 
@@ -110,9 +114,9 @@ contract("LinkedAddress", function ([...accounts]) {
         mockContract.testValidate(
           mockRegistry.address,
           mainAddress,
-          mainENS.split("."),
+          mainENSNodeHash,
           authKey,
-          authENS.split("."),
+          authENSNodeHash,
           { from: authAddress }
         ),
         "Invalid auth address"
@@ -121,7 +125,9 @@ contract("LinkedAddress", function ([...accounts]) {
 
     it("test authENS not set", async function () {
       const mainENS = "wilkins.eth";
+      const mainENSNodeHash = namehash.hash(mainENS);
       const authENS = "auth.wilkins.eth";
+      const authENSNodeHash = namehash.hash(authENS);
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
@@ -138,9 +144,9 @@ contract("LinkedAddress", function ([...accounts]) {
         mockContract.testValidate(
           mockRegistry.address,
           mainAddress,
-          mainENS.split("."),
+          mainENSNodeHash,
           authKey,
-          authENS.split("."),
+          authENSNodeHash,
           { from: authAddress }
         ),
         "Auth ENS not registed"
@@ -149,9 +155,13 @@ contract("LinkedAddress", function ([...accounts]) {
 
     it("test hijacker", async function () {
       const mainENS = "wilkins.eth";
+      const mainENSNodeHash = namehash.hash(mainENS);
       const authENS = "auth.wilkins.eth";
+      const authENSNodeHash = namehash.hash(authENS);
       const mainENSHijacker = "hijacker.eth";
+      const mainENSHijackerNodeHash = namehash.hash(mainENSHijacker);
       const authENSHijacker = "auth.hijacker.eth";
+      const authENSHijackerNodeHash = namehash.hash(authENSHijacker);
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
@@ -176,9 +186,9 @@ contract("LinkedAddress", function ([...accounts]) {
         mockContract.testValidate(
           mockRegistry.address,
           mainAddress,
-          mainENSHijacker.split("."),
+          mainENSHijackerNodeHash,
           authKey,
-          authENSHijacker.split("."),
+          authENSHijackerNodeHash,
           { from: anotherAddress }
         ),
         "Invalid auth address"
