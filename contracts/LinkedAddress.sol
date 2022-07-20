@@ -18,6 +18,8 @@ interface Resolver {
     function addr(bytes32 node) external view returns (address);
 
     function name(bytes32 node) external view returns (string memory);
+
+    function text(bytes32 node, string calldata key) external view returns (string memory);
 }
 
 /**
@@ -26,83 +28,47 @@ interface Resolver {
 library LinkedAddress {
     /**
      * Validate that the message sender is an authentication address for mainAddress
-     * @param ensRegistry    Address of ENS registry
-     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9A-Za-z]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
+     *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
+     * @param ensRegistry    Address of ENS registry
+     * @param authKey        The TEXT record of the authKey we are using for validation
+     * @param authENSParts   The array of the auth address ENS domain parts (e.g. auth.wilkins.eth == ['auth', 'wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
      */
     function validateSender(
         address ensRegistry,
-        bytes calldata authENSLabel,
         address mainAddress,
-        string[] calldata mainENSParts
+        string[] calldata mainENSParts,
+        string calldata authKey,
+        string[] calldata authENSParts
     ) internal view returns (bool) {
-        return validate(ensRegistry, msg.sender, authENSLabel, mainAddress, mainENSParts);
+        return validate(ensRegistry, mainAddress, mainENSParts, authKey, msg.sender, authENSParts);
     }
 
     /**
      * Validate that the authAddress is an authentication address for mainAddress
      *
      * @param ensRegistry    Address of ENS registry
-     * @param authAddress    The address of the authentication wallet
-     * @param authENSLabel   The ENS label of the authentication wallet (must be `auth[0-9A-Za-z]*`)
+     [0-9A-Za-z]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
+     * @param authKey        The TEXT record of the authKey we are using for validation
+     * @param authAddress    The address of the authentication wallet
+     * @param authENSParts   The array of the auth address ENS domain parts (e.g. auth.wilkins.eth == ['auth', 'wilkins', 'eth']).
+     *                       This is used vs. the full ENS a a single string name hash 
      */
     function validate(
         address ensRegistry,
-        address authAddress,
-        bytes calldata authENSLabel,
         address mainAddress,
-        string[] calldata mainENSParts
+        string[] calldata mainENSParts,
+        string calldata authKey,
+        address authAddress,
+        string[] calldata authENSParts
     ) internal view returns (bool) {
-        // Check if the ENS nodes resolve correctly to the provided addresses
-        bytes32 mainNameHash = _computeNamehash(mainENSParts);
-        address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
-        require(mainResolver != address(0), "Main ENS not registered");
-        require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Main address is wrong");
-
-        bytes32 mainReverseHash = _computeReverseNamehash(mainAddress);
-        address mainReverseResolver = ENS(ensRegistry).resolver(mainReverseHash);
-        require(mainReverseResolver != address(0), "Main ENS reverse lookup not registered");
-
-        // Verify that the reverse lookup for mainAddress matches the mainENSParts
-        {
-            uint256 len = mainENSParts.length;
-            bytes memory ensCheckBuffer = bytes(mainENSParts[0]);
-            unchecked {
-                for (uint256 idx = 1; idx < len; ++idx) {
-                    ensCheckBuffer = abi.encodePacked(ensCheckBuffer, ".", mainENSParts[idx]);
-                }
-            }
-            require(
-                keccak256(abi.encodePacked(Resolver(mainReverseResolver).name(mainReverseHash))) ==
-                    keccak256(ensCheckBuffer),
-                "Main ENS mismatch"
-            );
-        }
-
-        bytes32 authNameHash = _computeNamehash(mainNameHash, string(authENSLabel));
-        address authResolver = ENS(ensRegistry).resolver(authNameHash);
-        require(authResolver != address(0), "Auth ENS not registed");
-        require(authAddress == Resolver(authResolver).addr(authNameHash), "Not authenticated");
-
-        // Check that the subdomain name has the correct format auth[0-9A-Za-z]*.
-        bytes4 authPart = bytes4(authENSLabel[:4]);
-        require(authPart == "auth", "Invalid prefix");
-        unchecked {
-            for (uint256 i = authENSLabel.length; i > 4; i--) {
-                bytes1 char = authENSLabel[i];
-                require(
-                    (char >= 0x30 && char <= 0x39) ||
-                    (char >= 0x41 && char <= 0x5A) ||
-                    (char >= 0x61 && char <= 0x7A),
-                    "Invalid char"
-                );
-            }
-        }
+        _verifyMainENS(ensRegistry, mainAddress, mainENSParts, authKey, authAddress);
+        _verifyAuthENS(ensRegistry, mainAddress, authKey, authAddress, authENSParts);
 
         return true;
     }
@@ -110,6 +76,48 @@ library LinkedAddress {
     // *********************
     //   Helper Functions
     // *********************
+    function _verifyMainENS(
+        address ensRegistry,
+        address mainAddress,
+        string[] calldata mainENSParts,
+        string calldata authKey,
+        address authAddress
+    ) private view {
+        // Check if the ENS nodes resolve correctly to the provided addresses
+        bytes32 mainNameHash = _computeNamehash(mainENSParts);
+        address mainResolver = ENS(ensRegistry).resolver(mainNameHash);
+        require(mainResolver != address(0), "Main ENS not registered");
+        require(mainAddress == Resolver(mainResolver).addr(mainNameHash), "Main address is wrong");
+
+        // Verify the authKey TEXT record is set to authAddress by mainENS
+        string memory authText = Resolver(mainResolver).text(mainNameHash, authKey);
+        require(
+            keccak256(bytes(authText)) == keccak256(bytes(_addressToString(authAddress))),
+            "Invalid auth address"
+        );
+    }
+
+    function _verifyAuthENS(
+        address ensRegistry,
+        address mainAddress,
+        string memory authKey,
+        address authAddress,
+        string[] calldata authENSParts
+    ) private view {
+        // Check if the ENS nodes resolve correctly to the provided addresses
+        bytes32 authNameHash = _computeNamehash(authENSParts);
+        address authResolver = ENS(ensRegistry).resolver(authNameHash);
+        require(authResolver != address(0), "Auth ENS not registed");
+        require(authAddress == Resolver(authResolver).addr(authNameHash), "Auth address is wrong");
+
+        // Verify the TEXT record is appropriately set by authENS
+        string memory vaultText = Resolver(authResolver).text(authNameHash, "vault");
+        require(
+            keccak256(abi.encodePacked("eip5131:", authKey, ":", _addressToString(mainAddress))) ==
+                keccak256(bytes(vaultText)),
+            "Invalid auth text record"
+        );
+    }
 
     function _computeNamehash(string[] calldata _nameParts)
         private
@@ -140,20 +148,27 @@ library LinkedAddress {
         namehash = keccak256(abi.encodePacked(ADDR_REVERSE_NODE, sha3HexAddress(_address)));
     }
 
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+
     function sha3HexAddress(address addr) private pure returns (bytes32 ret) {
-        assembly {
-            let lookup := 0x3031323334353637383961626364656600000000000000000000000000000000
-            let i := 40
-            for {
-
-            } gt(i, 0) {
-
-            } {
-                i := sub(i, 1)
-                mstore8(i, byte(and(addr, 0xf), lookup))
-                addr := div(addr, 0x10)
-            }
-            ret := keccak256(0, 40)
+        uint256 value = uint256(uint160(addr));
+        bytes memory buffer = new bytes(40);
+        for (uint256 i = 39; i > 1; --i) {
+            buffer[i] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
         }
+        return keccak256(buffer);
+    }
+
+    function _addressToString(address addr) private pure returns (string memory ret) {
+        uint256 value = uint256(uint160(addr));
+        bytes memory buffer = new bytes(42);
+        buffer[0] = "0";
+        buffer[1] = "x";
+        for (uint256 i = 41; i > 1; --i) {
+            buffer[i] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
+        }
+        return string(buffer);
     }
 }

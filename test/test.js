@@ -33,6 +33,11 @@ contract("LinkedAddress", function ([...accounts]) {
       await resolver.setName(reverseNode, ENS);
     }
 
+    async function setupTextRecords(resolver, key, value, ENS) {
+      const node = namehash.hash(ENS);
+      await resolver.setText(node, key, value);
+    }
+
     async function setupENS(registry, resolver, address, ENS) {
       await setupForwardRecords(registry, resolver, address, ENS);
       await setupReverseRecord(registry, resolver, address, ENS);
@@ -41,81 +46,101 @@ contract("LinkedAddress", function ([...accounts]) {
     it("test standard functionality", async function () {
       const mainENS = "wilkins.eth";
       const authENS = "auth.wilkins.eth";
+      const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
+      await setupTextRecords(
+        mockResolver,
+        "vault",
+        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        authENS
+      );
 
       await mockContract.testValidate(
         mockRegistry.address,
-        web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
         mainAddress,
         mainENS.split("."),
+        authKey,
+        authENS.split("."),
         { from: authAddress }
       );
 
       await truffleAssert.reverts(
         mockContract.testValidate(
           mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
           mainAddress,
           mainENS.split("."),
+          authKey,
+          authENS.split("."),
           { from: anotherAddress }
         ),
-        "Not authenticated"
+        "Invalid auth address"
       );
     });
 
-    it("test auth.main not set", async function () {
+    it("test breaking the chain via invalidating TEXT", async function () {
       const mainENS = "wilkins.eth";
       const authENS = "auth.wilkins.eth";
+      const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
+      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
+      await setupTextRecords(
+        mockResolver,
+        "vault",
+        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        authENS
+      );
+
+      await mockContract.testValidate(
+        mockRegistry.address,
+        mainAddress,
+        mainENS.split("."),
+        authKey,
+        authENS.split("."),
+        { from: authAddress }
+      );
+
+      await setupTextRecords(mockResolver, authKey, "", mainENS);
+
+      await truffleAssert.reverts(
+        mockContract.testValidate(
+          mockRegistry.address,
+          mainAddress,
+          mainENS.split("."),
+          authKey,
+          authENS.split("."),
+          { from: authAddress }
+        ),
+        "Invalid auth address"
+      );
+    });
+
+    it("test authENS not set", async function () {
+      const mainENS = "wilkins.eth";
+      const authENS = "auth.wilkins.eth";
+      const authKey = "auth1";
+
+      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
       await setupReverseRecord(mockRegistry, mockResolver, authAddress, authENS);
-
-      await truffleAssert.reverts(
-        mockContract.testValidate(
-          mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
-          mainAddress,
-          mainENS.split("."),
-          { from: authAddress }
-        ),
-        "Auth ENS not registed"
+      await setupTextRecords(
+        mockResolver,
+        "vault",
+        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        authENS
       );
-    });
-
-    it("test wrong prefix", async function () {
-      const mainENS = "wilkins.eth";
-      const authENS = "foobar.wilkins.eth";
-
-      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
 
       await truffleAssert.reverts(
         mockContract.testValidate(
           mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
           mainAddress,
           mainENS.split("."),
-          { from: authAddress }
-        ),
-        "Invalid prefix"
-      );
-    });
-
-    it("test wrong domain", async function () {
-      const mainENS = "random.eth";
-      const authENS = "auth.wilkins.eth";
-
-      await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupENS(mockRegistry, mockResolver, authAddress, authENS);
-
-      await truffleAssert.reverts(
-        mockContract.testValidate(
-          mockRegistry.address,
-          web3.utils.encodePacked({ value: authENS.split(".")[0], type: "string" }),
-          mainAddress,
-          mainENS.split("."),
+          authKey,
+          authENS.split("."),
           { from: authAddress }
         ),
         "Auth ENS not registed"
@@ -127,21 +152,36 @@ contract("LinkedAddress", function ([...accounts]) {
       const authENS = "auth.wilkins.eth";
       const mainENSHijacker = "hijacker.eth";
       const authENSHijacker = "auth.hijacker.eth";
+      const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
+      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
+      await setupTextRecords(
+        mockResolver,
+        "vault",
+        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        authENS
+      );
       await setupForwardRecords(mockRegistry, mockResolver, mainAddress, mainENSHijacker);
       await setupENS(mockRegistry, mockResolver, anotherAddress, authENSHijacker);
+      await setupTextRecords(
+        mockResolver,
+        "vault",
+        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        authENSHijacker
+      );
 
       await truffleAssert.reverts(
         mockContract.testValidate(
           mockRegistry.address,
-          web3.utils.encodePacked({ value: authENSHijacker.split(".")[0], type: "string" }),
           mainAddress,
           mainENSHijacker.split("."),
+          authKey,
+          authENSHijacker.split("."),
           { from: anotherAddress }
         ),
-        "Main ENS mismatch"
+        "Invalid auth address"
       );
     });
 
