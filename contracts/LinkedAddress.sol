@@ -28,10 +28,10 @@ interface Resolver {
 library LinkedAddress {
     /**
      * Validate that the message sender is an authentication address for mainAddress
+     * @param ensRegistry    Address of ENS registry
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
-     * @param ensRegistry    Address of ENS registry
      * @param authKey        The TEXT record of the authKey we are using for validation
      * @param authENSParts   The array of the auth address ENS domain parts (e.g. auth.wilkins.eth == ['auth', 'wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
@@ -50,7 +50,6 @@ library LinkedAddress {
      * Validate that the authAddress is an authentication address for mainAddress
      *
      * @param ensRegistry    Address of ENS registry
-     [0-9A-Za-z]*`)
      * @param mainAddress    The main address we want to authenticate for.
      * @param mainENSParts   The array of the main address ENS domain parts (e.g. wilkins.eth == ['wilkins', 'eth']).
      *                       This is used vs. the full ENS a a single string name hash computations are gas efficient.
