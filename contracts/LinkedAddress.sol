@@ -112,35 +112,6 @@ library LinkedAddress {
         );
     }
 
-    function _computeNamehash(string[] calldata _nameParts)
-        private
-        pure
-        returns (bytes32 namehash)
-    {
-        namehash = 0x0000000000000000000000000000000000000000000000000000000000000000;
-        unchecked {
-            for (uint256 i = _nameParts.length; i > 0; --i) {
-                namehash = _computeNamehash(namehash, _nameParts[i - 1]);
-            }
-        }
-    }
-
-    function _computeNamehash(bytes32 parentNamehash, string calldata name)
-        private
-        pure
-        returns (bytes32 namehash)
-    {
-        namehash = keccak256(abi.encodePacked(parentNamehash, keccak256(bytes(name))));
-    }
-
-    // _computeNamehash('addr.reverse')
-    bytes32 constant ADDR_REVERSE_NODE =
-        0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
-
-    function _computeReverseNamehash(address _address) private pure returns (bytes32 namehash) {
-        namehash = keccak256(abi.encodePacked(ADDR_REVERSE_NODE, sha3HexAddress(_address)));
-    }
-
     bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
 
     function sha3HexAddress(address addr) private pure returns (bytes32 ret) {
