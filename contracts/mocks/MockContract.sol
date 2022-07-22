@@ -12,17 +12,17 @@ contract MockContract {
     function testValidate(
         address ensRegistry,
         address mainAddress,
-        string[] calldata mainENSParts,
+        bytes32 mainENSNodeHash,
         string calldata authKey,
-        string[] calldata authENSParts
+        bytes32 authENSNodeHash
     ) external returns (bool) {
         return
             LinkedAddress.validateSender(
                 ensRegistry,
                 mainAddress,
-                mainENSParts,
+                mainENSNodeHash,
                 authKey,
-                authENSParts
+                authENSNodeHash
             );
     }
 }
