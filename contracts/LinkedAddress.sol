@@ -111,9 +111,9 @@ library LinkedAddress {
         require(authAddress == Resolver(authResolver).addr(authNameHash), "Auth address is wrong");
 
         // Verify the TEXT record is appropriately set by authENS
-        string memory vaultText = Resolver(authResolver).text(authNameHash, "vault");
+        string memory vaultText = Resolver(authResolver).text(authNameHash, "eip5131:vault");
         require(
-            keccak256(abi.encodePacked("eip5131:", authKey, ":", _addressToString(mainAddress))) ==
+            keccak256(abi.encodePacked(authKey, ":", _addressToString(mainAddress))) ==
                 keccak256(bytes(vaultText)),
             "Invalid auth text record"
         );

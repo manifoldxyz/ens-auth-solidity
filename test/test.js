@@ -53,8 +53,8 @@ contract("LinkedAddress", function ([...accounts]) {
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
-        "vault",
-        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        "eip5131:vault",
+        `${authKey}:${mainAddress.toString().toLowerCase()}`,
         authENS
       );
 
@@ -90,8 +90,8 @@ contract("LinkedAddress", function ([...accounts]) {
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
-        "vault",
-        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        "eip5131:vault",
+        `${authKey}:${mainAddress.toString().toLowerCase()}`,
         authENS
       );
 
@@ -129,8 +129,8 @@ contract("LinkedAddress", function ([...accounts]) {
       await setupReverseRecord(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
-        "vault",
-        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        "eip5131:vault",
+        `${authKey}:${mainAddress.toString().toLowerCase()}`,
         authENS
       );
 
@@ -159,16 +159,16 @@ contract("LinkedAddress", function ([...accounts]) {
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
-        "vault",
-        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        "eip5131:vault",
+        `${authKey}:${mainAddress.toString().toLowerCase()}`,
         authENS
       );
       await setupForwardRecords(mockRegistry, mockResolver, mainAddress, mainENSHijacker);
       await setupENS(mockRegistry, mockResolver, anotherAddress, authENSHijacker);
       await setupTextRecords(
         mockResolver,
-        "vault",
-        `eip5131:${authKey}:${mainAddress.toString().toLowerCase()}`,
+        "eip5131:vault",
+        `${authKey}:${mainAddress.toString().toLowerCase()}`,
         authENSHijacker
       );
 
