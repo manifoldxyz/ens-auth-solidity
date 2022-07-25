@@ -124,15 +124,41 @@ library LinkedAddress {
         return keccak256(buffer);
     }
 
-    function _addressToString(address addr) private pure returns (string memory ret) {
-        uint256 value = uint256(uint160(addr));
-        bytes memory buffer = new bytes(42);
-        buffer[0] = "0";
-        buffer[1] = "x";
-        for (uint256 i = 41; i > 1; --i) {
-            buffer[i] = _HEX_SYMBOLS[value & 0xf];
-            value >>= 4;
+    function _addressToString(address addr) private pure returns (string memory ptr) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            ptr := mload(0x40)
+
+            // Adjust mem ptr and keep 32 byte aligned
+            // 32 bytes to store string length; address is 42 bytes long
+            mstore(0x40, add(ptr, 96))
+
+            // Store (string length, '0', 'x') (42, 48, 120)
+            // Single write by offsetting across 32 byte boundary
+            ptr := add(ptr, 2)
+            mstore(ptr, 0x2a3078)
+
+            // Write string backwards
+            for {
+                // end is at 'x', ptr is at lsb char
+                let end := add(ptr, 31)
+                ptr := add(ptr, 71)
+            } gt(ptr, end) {
+                ptr := sub(ptr, 1)
+                addr := shr(4, addr)
+            } {
+                let v := and(addr, 0xf)
+                // if > 9, use ascii 'a-f' (no conditional required)
+                v := add(v, mul(gt(v, 9), 39))
+                // Add ascii for '0'
+                v := add(v, 48)
+                mstore8(ptr, v)
+            }
+
+            // return ptr to point to length (32 + 2 for '0x' - 1)
+            ptr := sub(ptr, 33)
         }
-        return string(buffer);
+
+        return string(ptr);
     }
 }
