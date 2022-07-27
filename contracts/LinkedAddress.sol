@@ -84,7 +84,7 @@ library LinkedAddress {
         require(mainAddress == Resolver(mainResolver).addr(mainENSNodeHash), "Main address is wrong");
 
         // Verify the authKey TEXT record is set to authAddress by mainENS
-        string memory authText = Resolver(mainResolver).text(mainENSNodeHash, authKey);
+        string memory authText = Resolver(mainResolver).text(mainENSNodeHash, string(abi.encodePacked("eip5131:", authKey)));
         require(
             keccak256(bytes(authText)) == keccak256(bytes(_addressToString(authAddress))),
             "Invalid auth address"

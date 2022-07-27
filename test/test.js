@@ -51,7 +51,7 @@ contract("LinkedAddress", function ([...accounts]) {
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
+      await setupTextRecords(mockResolver, `eip5131:${authKey}`, authAddress.toString().toLowerCase(), mainENS);
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
@@ -90,7 +90,7 @@ contract("LinkedAddress", function ([...accounts]) {
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
+      await setupTextRecords(mockResolver, `eip5131:${authKey}`, authAddress.toString().toLowerCase(), mainENS);
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
@@ -108,7 +108,7 @@ contract("LinkedAddress", function ([...accounts]) {
         { from: authAddress }
       );
 
-      await setupTextRecords(mockResolver, authKey, "", mainENS);
+      await setupTextRecords(mockResolver, `eip5131:${authKey}`, "", mainENS);
 
       await truffleAssert.reverts(
         mockContract.testValidate(
@@ -131,7 +131,7 @@ contract("LinkedAddress", function ([...accounts]) {
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
+      await setupTextRecords(mockResolver, `eip5131:${authKey}`, authAddress.toString().toLowerCase(), mainENS);
       await setupReverseRecord(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
@@ -165,7 +165,7 @@ contract("LinkedAddress", function ([...accounts]) {
       const authKey = "auth1";
 
       await setupENS(mockRegistry, mockResolver, mainAddress, mainENS);
-      await setupTextRecords(mockResolver, authKey, authAddress.toString().toLowerCase(), mainENS);
+      await setupTextRecords(mockResolver, `eip5131:${authKey}`, authAddress.toString().toLowerCase(), mainENS);
       await setupENS(mockRegistry, mockResolver, authAddress, authENS);
       await setupTextRecords(
         mockResolver,
