@@ -149,7 +149,7 @@ contract("LinkedAddress", function ([...accounts]) {
           authENSNodeHash,
           { from: authAddress }
         ),
-        "Auth ENS not registed"
+        "Auth ENS not registered"
       );
     });
 
